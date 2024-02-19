@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            background-color: black;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+            background-color: #ddd;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="controls">
+        <button id="upBtn">Up</button><br>
+        <button id="leftBtn">Left</button>
+        <button id="rightBtn">Right</button><br>
+        <button id="downBtn">Down</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // grid size and tile count
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [{
+            x: 10 * gridSize,
+            y: 10 * gridSize
+        }];
+        let dx = gridSize;
+        let dy = 0;
+        let foodX, foodY;
+        let score = 0;
+
+        function getRandomCoordinate() {
+            return Math.floor(Math.random() * tileCount) * gridSize;
+        }
+
+        function drawSnake() {
+            snake.forEach(drawSnakePart);
+        }
+
+        function drawSnakePart(snakePart) {
+            ctx.fillStyle = 'green';
+            ctx.fillRect(snakePart.x, snakePart.y, gridSize, gridSize);
+            ctx.strokeStyle = 'darkgreen';
+            ctx.strokeRect(snakePart.x, snakePart.y, gridSize, gridSize);
+        }
+
+        function moveSnake() {
+            const head = {
+                x: snake[0].x + dx,
+                y: snake[0].y + dy
+            };
+            snake.unshift(head);
+
+            const ateFood = snake[0].x === foodX && snake[0].y === foodY;
+            if (ateFood) {
+                score += 10;
+                document.getElementById('score').innerText = score;
+                createFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = 'lightgrey';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function createFood() {
+            foodX = getRandomCoordinate();
+            foodY = getRandomCoordinate();
+
+            snake.forEach(function isFoodOnSnake(part) {
+                const foodIsOnSnake = part.x === foodX && part.y === foodY;
+                if (foodIsOnSnake) {
+                    createFood();
+                }
+            });
+        }
+
+        function drawFood() {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(foodX, foodY, gridSize, gridSize);
+        }
+
+        function changeDirection(event) {
+            const keyPressed = event.keyCode;
+
+            if (keyPressed === 37 && dx !== gridSize) { // Left arrow
+                dx = -gridSize;
+                dy = 0;
+            }
+
+            if (keyPressed === 38 && dy !== gridSize) { // Up arrow
+                dx = 0;
+                dy = -gridSize;
+            }
+
+            if (keyPressed === 39 && dx !== -gridSize) { // Right arrow
+                dx = gridSize;
+                dy = 0;
+            }
+
+            if (keyPressed === 40 && dy !== -gridSize) { // Down arrow
+                dx = 0;
+                dy = gridSize;
+            }
+        }
+
+        function draw() {
+            clearCanvas();
+            drawFood();
+            drawSnake();
+            moveSnake();
+            checkCollision();
+        }
+
+        function checkCollision() {
+            const hitLeftWall = snake[0].x < 0;
+            const hitRightWall = snake[0].x >= canvas.width;
+            const hitTopWall = snake[0].y < 0;
+            const hitBottomWall = snake[0].y >= canvas.height;
+
+            if (hitLeftWall || hitRightWall || hitTopWall || hitBottomWall) {
+                resetGame();
+            }
+
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
+                    resetGame();
+                    break;
+                }
+            }
+        }
+
+        function resetGame() {
+            alert(`Game over! Your score: ${score}`);
+            snake = [{ x: 10 * gridSize, y: 10 * gridSize }];
+            dx = gridSize;
+            dy = 0;
+            score = 0;
+            document.getElementById('score').innerText = score;
+            createFood();
+        }
+
+        createFood();
+        setInterval(draw, 100);
+
+        // Button event listeners
+        document.getElementById('upBtn').addEventListener('click', function() {
+            if (dy !== gridSize) { // Cannot move upwards when going downwards
+                dx = 0;
+                dy = -gridSize;
+            }
+        });
+
+        document.getElementById('leftBtn').addEventListener('click', function() {
+            if (dx !== gridSize) { // Cannot move left when going right
+                dx = -gridSize;
+                dy = 0;
+            }
+        });
+
+        document.getElementById('rightBtn').addEventListener('click', function() {
+            if (dx !== -gridSize) { // Cannot move right when going left
+                dx = gridSize;
+                dy = 0;
+            }
+        });
+
+        document.getElementById('downBtn').addEventListener('click', function() {
+            if (dy !== -gridSize) { // Cannot move downwards when going upwards
+                dx = 0;
+                dy = gridSize;
+            }
+        });
+
+    </script>
+    <div id="score" style="color: white; text-align: center;">0</div>
+</body>
+</html>
